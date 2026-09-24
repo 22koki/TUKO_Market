@@ -111,6 +111,18 @@ class MpesaClient:
 
 def parse_stk_callback(payload):
     callback = (payload.get("Body") or {}).get("stkCallback") or {}
+    if not callback and payload.get("checkout_request_id"):
+        return {
+            "merchant_request_id": payload.get("merchant_request_id", ""),
+            "checkout_request_id": payload.get("checkout_request_id", ""),
+            "result_code": str(payload.get("result_code", "")),
+            "result_description": payload.get("result_description", ""),
+            "mpesa_receipt_number": str(payload.get("mpesa_receipt_number", "")),
+            "amount": payload.get("amount"),
+            "phone_number": str(payload.get("phone_number", "")),
+            "transaction_date": payload.get("transaction_date"),
+        }
+
     metadata = {}
     for item in ((callback.get("CallbackMetadata") or {}).get("Item") or []):
         name = item.get("Name")
