@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "vendors",
     "catalog",
     "orders",
+    "payments",
 ]
 
 MIDDLEWARE = [
@@ -113,3 +114,5 @@ if DEBUG:
         r"^http://192\.168\.\d{1,3}\.\d{1,3}:(3000|5173)$",
         r"^http://172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}:(3000|5173)$",
     ]
+
+MPESA_MOCK = os.getenv("MPESA_MOCK", "True").lower() == "true"
