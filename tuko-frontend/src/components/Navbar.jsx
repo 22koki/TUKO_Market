@@ -1,7 +1,7 @@
 import { FiMapPin, FiMoon, FiSearch, FiShoppingCart, FiSun } from "react-icons/fi";
 import { useTheme } from "../context/ThemeContext";
 
-export default function Navbar({ search, setSearch }) {
+export default function Navbar({ search, setSearch, cartCount = 0, onCartOpen }) {
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -31,9 +31,9 @@ export default function Navbar({ search, setSearch }) {
           {theme === "dark" ? <FiSun /> : <FiMoon />}
         </button>
 
-        <button className="relative grid h-11 w-11 place-items-center rounded-2xl bg-emerald-600 text-white">
+        <button onClick={onCartOpen} className="relative grid h-11 w-11 place-items-center rounded-2xl bg-emerald-600 text-white">
           <FiShoppingCart />
-          <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-orange-500 px-1 text-[10px] font-bold">0</span>
+          <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-orange-500 px-1 text-[10px] font-bold">{cartCount}</span>
         </button>
       </div>
     </header>
