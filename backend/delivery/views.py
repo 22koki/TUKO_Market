@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from orders.models import Order
 from .models import DeliveryJob
-from .serializers import DeliveryJobSerializer
+from .serializers import RiderDeliveryJobSerializer
 
 class RiderOnly:
     def ensure_rider(self, request):
@@ -35,7 +35,7 @@ class AcceptDeliveryView(RiderOnly, APIView):
         job.status = DeliveryJob.Status.ACCEPTED
         job.accepted_at = timezone.now()
         job.save(update_fields=["rider","status","accepted_at"])
-        return Response(DeliveryJobSerializer(job).data)
+        return Response(RiderDeliveryJobSerializer(job).data)
 
 class UpdateDeliveryStatusView(RiderOnly, APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -62,7 +62,7 @@ class UpdateDeliveryStatusView(RiderOnly, APIView):
         else:
             return Response({"detail":"Invalid delivery transition."}, status=status.HTTP_400_BAD_REQUEST)
         job.save()
-        return Response(DeliveryJobSerializer(job).data)
+        return Response(RiderDeliveryJobSerializer(job).data)
 
 class CreateReadyDeliveryJobsView(APIView):
     permission_classes = [permissions.IsAdminUser]
