@@ -1,28 +1,28 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FiArrowLeft, FiMapPin, FiNavigation, FiPackage, FiDollarSign } from "react-icons/fi";
+import { acceptDelivery, fetchAvailableDeliveries, fetchMe, fetchMyDeliveries, login, updateDelivery } from "../services/api";
 
 export default function RiderDashboard(){
-  return <div className="min-h-screen bg-[#fffaf3] p-4 text-slate-900 dark:bg-slate-950 dark:text-white">
-    <div className="mx-auto max-w-7xl">
-      <div className="flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold dark:bg-slate-900"><FiArrowLeft/> Customer market</Link>
-        <div className="text-right"><div className="text-2xl font-black text-orange-500">TUKO Rider</div><div className="text-xs text-slate-500">Online · Nairobi</div></div>
-      </div>
-      <div className="mt-8 grid gap-4 md:grid-cols-3">
-        <div className="rounded-3xl bg-orange-500 p-6 text-white"><FiNavigation className="text-2xl"/><div className="mt-4 text-3xl font-black">3</div><div>Available jobs nearby</div></div>
-        <div className="rounded-3xl bg-white p-6 dark:bg-slate-900"><FiPackage className="text-2xl text-emerald-600"/><div className="mt-4 text-3xl font-black">5</div><div className="text-slate-500">Deliveries today</div></div>
-        <div className="rounded-3xl bg-white p-6 dark:bg-slate-900"><FiDollarSign className="text-2xl text-emerald-600"/><div className="mt-4 text-3xl font-black">KSh 1,420</div><div className="text-slate-500">Today’s earnings</div></div>
-      </div>
-      <section className="mt-8 rounded-[2rem] bg-white p-6 dark:bg-slate-900">
-        <p className="text-sm font-bold text-orange-500">Next delivery opportunity</p>
-        <h1 className="mt-1 text-3xl font-black">Multi-vendor pickup</h1>
-        <div className="mt-5 grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-center">
-          <div className="rounded-3xl bg-emerald-50 p-5 dark:bg-emerald-500/10"><FiMapPin className="text-emerald-600"/><div className="mt-2 font-black">TUKO Demo Market</div><div className="text-sm text-slate-500">3 vendor pickups · 2.4 km</div></div>
-          <div className="text-center font-black text-slate-400">→</div>
-          <div className="rounded-3xl bg-orange-50 p-5 dark:bg-orange-500/10"><FiMapPin className="text-orange-500"/><div className="mt-2 font-black">Kilimani</div><div className="text-sm text-slate-500">Customer delivery · 4.8 km</div></div>
-        </div>
-        <div className="mt-5 flex items-center justify-between rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><div><div className="text-xs text-slate-500">Delivery earnings</div><div className="text-2xl font-black">KSh 280</div></div><button className="rounded-2xl bg-orange-500 px-6 py-3 font-black text-white">Accept delivery</button></div>
-      </section>
-    </div>
-  </div>
+ const [available,setAvailable]=useState([]),[mine,setMine]=useState([]),[ready,setReady]=useState(false),[message,setMessage]=useState("");
+ const [username,setUsername]=useState(""),[password,setPassword]=useState(""),[pin,setPin]=useState({});
+ async function load(){
+  try{const me=await fetchMe(); if(me.role!=="rider"){setReady(false);setMessage("This account is not a rider account.");return;} setReady(true); const [a,m]=await Promise.all([fetchAvailableDeliveries(),fetchMyDeliveries()]);setAvailable(a);setMine(m);}
+  catch(e){setReady(false);setMessage(e.response?.data?.detail||"Sign in with a rider account.");}
+ }
+ useEffect(()=>{if(localStorage.getItem("tuko-access"))load();},[]);
+ async function signIn(e){e.preventDefault();try{await login(username,password);await load();}catch(e){setMessage(e.response?.data?.detail||"Rider login failed.");}}
+ async function accept(id){try{await acceptDelivery(id);await load();}catch(e){setMessage(e.response?.data?.detail||"Could not accept delivery.");}}
+ async function action(job,act){try{await updateDelivery(job.id,act,pin[job.id]||"");await load();}catch(e){setMessage(e.response?.data?.detail||"Could not update delivery.");}}
+ const earnings=useMemo(()=>mine.filter(j=>j.status==="delivered").reduce((n,j)=>n+Number(j.earnings),0),[mine]);
+ return <div className="min-h-screen bg-[#fffaf3] p-4 text-slate-900 dark:bg-slate-950 dark:text-white"><div className="mx-auto max-w-7xl">
+  <div className="flex items-center justify-between"><Link to="/" className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold dark:bg-slate-900"><FiArrowLeft/> Customer market</Link><div className="text-right"><div className="text-2xl font-black text-orange-500">TUKO Rider</div><div className="text-xs text-slate-500">Delivery workspace</div></div></div>
+  {message&&<div className="mt-5 rounded-2xl bg-orange-100 p-4 text-sm font-bold text-orange-900 dark:bg-orange-500/10 dark:text-orange-200">{message}</div>}
+  {!ready&&<form onSubmit={signIn} className="mx-auto mt-12 max-w-md rounded-[2rem] bg-white p-6 shadow-xl dark:bg-slate-900"><p className="text-sm font-bold text-orange-500">Rider access</p><h1 className="text-3xl font-black">Go online</h1><input value={username} onChange={e=>setUsername(e.target.value)} placeholder="Rider username" className="mt-5 w-full rounded-2xl border p-4 dark:border-slate-700 dark:bg-slate-950"/><input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" className="mt-3 w-full rounded-2xl border p-4 dark:border-slate-700 dark:bg-slate-950"/><button className="mt-4 w-full rounded-2xl bg-orange-500 py-4 font-black text-white">Open rider dashboard</button></form>}
+  {ready&&<>
+   <div className="mt-8 grid gap-4 md:grid-cols-3"><div className="rounded-3xl bg-orange-500 p-6 text-white"><FiNavigation className="text-2xl"/><div className="mt-4 text-3xl font-black">{available.length}</div><div>Available jobs</div></div><div className="rounded-3xl bg-white p-6 dark:bg-slate-900"><FiPackage className="text-2xl text-emerald-600"/><div className="mt-4 text-3xl font-black">{mine.length}</div><div className="text-slate-500">My deliveries</div></div><div className="rounded-3xl bg-white p-6 dark:bg-slate-900"><FiDollarSign className="text-2xl text-emerald-600"/><div className="mt-4 text-3xl font-black">KSh {earnings.toLocaleString()}</div><div className="text-slate-500">Released earnings</div></div></div>
+   <section className="mt-8 rounded-[2rem] bg-white p-6 dark:bg-slate-900"><h2 className="text-2xl font-black">Available deliveries</h2><div className="mt-4 space-y-3">{!available.length&&<p className="text-slate-500">No ready delivery jobs yet.</p>}{available.map(j=><div key={j.id} className="rounded-3xl bg-orange-50 p-5 dark:bg-orange-500/10"><FiMapPin className="text-orange-500"/><div className="mt-2 font-black">Order #{j.order}</div><div className="text-sm text-slate-500">{j.delivery_address}</div><div className="mt-4 flex items-center justify-between"><b>KSh {Number(j.earnings).toLocaleString()} earnings</b><button onClick={()=>accept(j.id)} className="rounded-2xl bg-orange-500 px-5 py-3 font-black text-white">Accept</button></div></div>)}</div></section>
+   <section className="mt-6 rounded-[2rem] bg-white p-6 dark:bg-slate-900"><h2 className="text-2xl font-black">My delivery jobs</h2><div className="mt-4 space-y-3">{mine.map(j=><div key={j.id} className="rounded-3xl border p-5 dark:border-slate-800"><div className="flex justify-between"><div><b>Order #{j.order}</b><div className="text-sm text-slate-500">{j.delivery_address}</div></div><span className="h-fit rounded-full bg-emerald-100 px-3 py-1 text-xs font-black uppercase text-emerald-800">{j.status}</span></div><div className="mt-4 flex flex-wrap gap-2">{j.status==="accepted"&&<button onClick={()=>action(j,"picked_up")} className="rounded-xl bg-emerald-600 px-4 py-2 font-bold text-white">Confirm pickup</button>}{j.status==="picked_up"&&<button onClick={()=>action(j,"out_for_delivery")} className="rounded-xl bg-orange-500 px-4 py-2 font-bold text-white">Start delivery</button>}{["picked_up","out_for_delivery"].includes(j.status)&&<><input value={pin[j.id]||""} onChange={e=>setPin({...pin,[j.id]:e.target.value})} placeholder="Customer PIN" maxLength={4} className="w-36 rounded-xl border p-2 dark:border-slate-700 dark:bg-slate-950"/><button onClick={()=>action(j,"delivered")} className="rounded-xl bg-slate-900 px-4 py-2 font-bold text-white dark:bg-white dark:text-slate-900">Complete delivery</button></>}</div></div>)}</div></section>
+  </>}
+ </div></div>
 }
