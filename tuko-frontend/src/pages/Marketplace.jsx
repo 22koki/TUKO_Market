@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { FiArrowRight, FiMapPin, FiPlus, FiStar, FiTruck } from "react-icons/fi";
 import Navbar from "../components/Navbar";
+import CartDrawer from "../components/CartDrawer";
+import { useCart } from "../context/CartContext";
 import { fetchCategories, fetchProducts, fetchVendors } from "../services/api";
 
 const fallbackProducts = [
@@ -24,6 +26,8 @@ export default function Marketplace() {
   const [vendors, setVendors] = useState([]);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
+  const [cartOpen, setCartOpen] = useState(false);
+  const { addItem, count } = useCart();
 
   useEffect(() => {
     Promise.all([fetchProducts(), fetchCategories(), fetchVendors()])
@@ -49,7 +53,8 @@ export default function Marketplace() {
 
   return (
     <div className="min-h-screen bg-[#fffaf3] text-slate-900 transition-colors dark:bg-slate-950 dark:text-white">
-      <Navbar search={search} setSearch={setSearch} />
+      <Navbar search={search} setSearch={setSearch} cartCount={count} onCartOpen={() => setCartOpen(true)} />
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
 
       <main className="mx-auto max-w-7xl px-4 pb-16 pt-6">
         <section className="grid gap-4 lg:grid-cols-[1.35fr_.65fr]">
@@ -126,7 +131,7 @@ export default function Marketplace() {
                       <div className="text-xl font-black text-emerald-700 dark:text-emerald-400">KSh {Number(product.price).toLocaleString()}</div>
                       <div className="text-xs text-slate-500">per {product.unit}</div>
                     </div>
-                    <button className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/20 transition hover:scale-105"><FiPlus /></button>
+                    <button onClick={() => { addItem(product); setCartOpen(true); }} className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/20 transition hover:scale-105"><FiPlus /></button>
                   </div>
                 </div>
               </article>
