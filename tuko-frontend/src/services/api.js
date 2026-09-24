@@ -97,5 +97,14 @@ export async function ensureRole(role) {
     logout();
     return false;
   }
+export async function fetchOrders() {
+ const token=localStorage.getItem("tuko-access");
+ const {data}=await api.get("/api/orders/",{headers:{Authorization:`Bearer ${token}`}});
+ return data;
+}
+export async function fetchOrder(id) {
+ const token=localStorage.getItem("tuko-access");
+ const {data}=await api.get(`/api/orders/${id}/`,{headers:{Authorization:`Bearer ${token}`}});
+ return data;
 }
 export default api;
