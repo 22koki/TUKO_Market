@@ -45,3 +45,24 @@ class OrderTests(APITestCase):
         response = self.client.get(reverse("vendor-order-list"))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
+
+    def test_vendor_can_progress_order_to_ready(self):
+        create = self.client.post(reverse("order-list-create"), {
+            "fulfilment": "pickup",
+            "items": [{"product": self.product.id, "quantity": "1.00"}],
+        }, format="json")
+        self.client.force_authenticate(self.product.vendor.owner)
+        url = reverse("vendor-order-status", args=[create.data["id"]])
+        for new_status in ("confirmed", "preparing", "ready"):
+            response = self.client.patch(url, {"status": new_status}, format="json")
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["status"], new_status)
+
+    def test_vendor_cannot_skip_order_states(self):
+        create = self.client.post(reverse("order-list-create"), {
+            "fulfilment": "pickup",
+            "items": [{"product": self.product.id, "quantity": "1.00"}],
+        }, format="json")
+        self.client.force_authenticate(self.product.vendor.owner)
+        response = self.client.patch(reverse("vendor-order-status", args=[create.data["id"]]), {"status": "ready"}, format="json")
+        self.assertEqual(response.status_code, 400)
