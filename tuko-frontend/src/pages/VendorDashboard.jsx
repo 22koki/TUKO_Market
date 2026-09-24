@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FiArrowLeft, FiPackage, FiDollarSign, FiClock, FiCheckCircle } from "react-icons/fi";
-import { fetchMe, fetchVendorOrders, login, updateVendorOrderStatus } from "../services/api";
+import { fetchMe, fetchVendorOrders, loginAs, updateVendorOrderStatus } from "../services/api";
 
 const nextStatus={pending:"confirmed",confirmed:"preparing",preparing:"ready"};
 const nextLabel={pending:"Accept order",confirmed:"Start preparing",preparing:"Mark ready"};
@@ -13,17 +13,17 @@ export default function VendorDashboard(){
   async function load(){
     setLoading(true); setMessage("");
     try{
-      const me=await fetchMe();
+      const me=await fetchMe("vendor");
       if(me.role!=="vendor"){setVendorReady(false);setMessage("This account is not a vendor account.");return;}
       setVendorReady(true); setOrders(await fetchVendorOrders());
     }catch(e){setVendorReady(false);setMessage(e.response?.data?.detail||"Sign in with a vendor account.");}
     finally{setLoading(false);}
   }
-  useEffect(()=>{if(localStorage.getItem("tuko-access")) load();},[]);
+  useEffect(()=>{if(localStorage.getItem("tuko-vendor-access")) load();},[]);
 
   async function signIn(e){
     e.preventDefault(); setLoading(true); setMessage("");
-    try{await login(username,password); await load();}
+    try{await loginAs("vendor",username,password); await load();}
     catch(e){setMessage(e.response?.data?.detail||"Vendor login failed.");setLoading(false);}
   }
   async function advance(order){

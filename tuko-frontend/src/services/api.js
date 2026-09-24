@@ -5,6 +5,18 @@ const api = axios.create({
   timeout: 10000,
 });
 
+const accessKey = (role) => `tuko-${role}-access`;
+const refreshKey = (role) => `tuko-${role}-refresh`;
+
+function tokenFor(role) {
+  return localStorage.getItem(accessKey(role));
+}
+
+function authHeaders(role) {
+  const token = tokenFor(role);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export async function fetchProducts(params = {}) {
   const { data } = await api.get("/api/marketplace/products/", { params });
   return data;
@@ -20,91 +32,108 @@ export async function fetchVendors() {
   return data;
 }
 
-export async function login(username, password) {
+export async function loginAs(role, username, password) {
   const { data } = await api.post("/api/auth/token/", { username, password });
-  localStorage.setItem("tuko-access", data.access);
-  localStorage.setItem("tuko-refresh", data.refresh);
+  localStorage.setItem(accessKey(role), data.access);
+  localStorage.setItem(refreshKey(role), data.refresh);
   return data;
 }
-export function logout() {
-  localStorage.removeItem("tuko-access");
-  localStorage.removeItem("tuko-refresh");
+
+export async function login(username, password) {
+  return loginAs("customer", username, password);
 }
+
+export function logout(role = "customer") {
+  localStorage.removeItem(accessKey(role));
+  localStorage.removeItem(refreshKey(role));
+}
+
+export async function fetchMe(role = "customer") {
+  const { data } = await api.get("/api/auth/me/", { headers: authHeaders(role) });
+  return data;
+}
+
+export async function ensureRole(role) {
+  if (!tokenFor(role)) return false;
+  try {
+    const me = await fetchMe(role);
+    return me.role === role;
+  } catch {
+    logout(role);
+    return false;
+  }
+}
+
 export async function createOrder(payload) {
-  const token = localStorage.getItem("tuko-access");
-  const { data } = await api.post("/api/orders/", payload, { headers: { Authorization: `Bearer ${token}` } });
+  const { data } = await api.post("/api/orders/", payload, { headers: authHeaders("customer") });
   return data;
 }
+
 export async function initiateMpesa(orderId, phoneNumber) {
-  const token = localStorage.getItem("tuko-access");
   const { data } = await api.post("/api/payments/mpesa/initiate/", {
     order_id: orderId,
     phone_number: phoneNumber,
-  }, { headers: { Authorization: `Bearer ${token}` } });
+  }, { headers: authHeaders("customer") });
   return data;
 }
 
 export async function getPayment(orderId) {
-  const token = localStorage.getItem("tuko-access");
   const { data } = await api.get(`/api/payments/orders/${orderId}/`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: authHeaders("customer"),
   });
   return data;
 }
 
-export async function fetchMe() {
-  const token = localStorage.getItem("tuko-access");
-  const { data } = await api.get("/api/auth/me/", { headers: { Authorization: `Bearer ${token}` } });
-  return data;
-}
-export async function fetchVendorOrders() {
-  const token = localStorage.getItem("tuko-access");
-  const { data } = await api.get("/api/orders/vendor/", { headers: { Authorization: `Bearer ${token}` } });
-  return data;
-}
-export async function updateVendorOrderStatus(orderId, status) {
-  const token = localStorage.getItem("tuko-access");
-  const { data } = await api.patch(`/api/orders/vendor/${orderId}/status/`, { status }, { headers: { Authorization: `Bearer ${token}` } });
-  return data;
-}
-export async function fetchAvailableDeliveries() {
- const token=localStorage.getItem("tuko-access");
- const {data}=await api.get("/api/deliveries/available/",{headers:{Authorization:`Bearer ${token}`}});
- return data;
-}
-export async function fetchMyDeliveries() {
- const token=localStorage.getItem("tuko-access");
- const {data}=await api.get("/api/deliveries/mine/",{headers:{Authorization:`Bearer ${token}`}});
- return data;
-}
-export async function acceptDelivery(id) {
- const token=localStorage.getItem("tuko-access");
- const {data}=await api.post(`/api/deliveries/${id}/accept/`,{}, {headers:{Authorization:`Bearer ${token}`}});
- return data;
-}
-export async function updateDelivery(id, action, pin="") {
- const token=localStorage.getItem("tuko-access");
- const {data}=await api.post(`/api/deliveries/${id}/update/`,{action,pin},{headers:{Authorization:`Bearer ${token}`}});
- return data;
-}
-export async function ensureRole(role) {
-  const token = localStorage.getItem("tuko-access");
-  if (!token) return false;
-  try {
-    const me = await fetchMe();
-    return me.role === role;
-  } catch {
-    logout();
-    return false;
-  }
 export async function fetchOrders() {
- const token=localStorage.getItem("tuko-access");
- const {data}=await api.get("/api/orders/",{headers:{Authorization:`Bearer ${token}`}});
- return data;
+  const { data } = await api.get("/api/orders/", { headers: authHeaders("customer") });
+  return data;
 }
+
 export async function fetchOrder(id) {
- const token=localStorage.getItem("tuko-access");
- const {data}=await api.get(`/api/orders/${id}/`,{headers:{Authorization:`Bearer ${token}`}});
- return data;
+  const { data } = await api.get(`/api/orders/${id}/`, { headers: authHeaders("customer") });
+  return data;
 }
+
+export async function fetchVendorOrders() {
+  const { data } = await api.get("/api/orders/vendor/", { headers: authHeaders("vendor") });
+  return data;
+}
+
+export async function updateVendorOrderStatus(orderId, status) {
+  const { data } = await api.patch(
+    `/api/orders/vendor/${orderId}/status/`,
+    { status },
+    { headers: authHeaders("vendor") }
+  );
+  return data;
+}
+
+export async function fetchAvailableDeliveries() {
+  const { data } = await api.get("/api/deliveries/available/", { headers: authHeaders("rider") });
+  return data;
+}
+
+export async function fetchMyDeliveries() {
+  const { data } = await api.get("/api/deliveries/mine/", { headers: authHeaders("rider") });
+  return data;
+}
+
+export async function acceptDelivery(id) {
+  const { data } = await api.post(
+    `/api/deliveries/${id}/accept/`,
+    {},
+    { headers: authHeaders("rider") }
+  );
+  return data;
+}
+
+export async function updateDelivery(id, action, pin = "") {
+  const { data } = await api.post(
+    `/api/deliveries/${id}/update/`,
+    { action, pin },
+    { headers: authHeaders("rider") }
+  );
+  return data;
+}
+
 export default api;
