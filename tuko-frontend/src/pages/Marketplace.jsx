@@ -28,6 +28,8 @@ export default function Marketplace() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
+  const [marketListOpen, setMarketListOpen] = useState(false);
+  const [marketList, setMarketList] = useState("");
   const { addItem, count } = useCart();
 
   useEffect(() => {
@@ -58,7 +60,9 @@ export default function Marketplace() {
       <Navbar search={search} setSearch={setSearch} cartCount={count} onCartOpen={() => setCartOpen(true)} />
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
 
+      {marketListOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4 backdrop-blur-sm"><div className="w-full max-w-lg rounded-[2rem] bg-white p-6 shadow-2xl dark:bg-slate-900"><div className="flex items-center justify-between"><div><p className="text-sm font-bold text-orange-500">Smart shopping</p><h2 className="text-2xl font-black">Build your market list</h2></div><button onClick={() => setMarketListOpen(false)} className="rounded-full bg-slate-100 px-4 py-2 font-bold dark:bg-slate-800">✕</button></div><p className="mt-3 text-sm text-slate-500">Type or paste what you need, one item per line. Smart vendor matching comes next.</p><textarea value={marketList} onChange={e=>setMarketList(e.target.value)} rows={7} placeholder={"Tomatoes 2kg\nPotatoes 3kg\nEggs 1 tray\nAvocados 4"} className="mt-4 w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950"/><button onClick={() => { setSearch(marketList.split(/\\n|,/)[0]?.replace(/\\d+.*/, "").trim() || ""); setMarketListOpen(false); document.getElementById("products")?.scrollIntoView({behavior:"smooth"}); }} className="mt-4 w-full rounded-2xl bg-emerald-600 py-4 font-black text-white">Find these items</button></div></div>}
       <main className="mx-auto max-w-7xl px-4 pb-16 pt-6">
+        <div className="mb-5 flex flex-wrap gap-2 text-sm font-bold"><a href="/vendor" className="rounded-full bg-emerald-100 px-4 py-2 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300">Vendor POV →</a><a href="/rider" className="rounded-full bg-orange-100 px-4 py-2 text-orange-800 dark:bg-orange-500/10 dark:text-orange-300">Rider POV →</a></div>
         <section className="grid gap-4 lg:grid-cols-[1.35fr_.65fr]">
           <div className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-emerald-700 via-emerald-600 to-lime-500 p-6 text-white shadow-xl shadow-emerald-900/10 md:p-10">
             <div className="max-w-xl">
@@ -66,8 +70,8 @@ export default function Marketplace() {
               <h1 className="mt-4 text-4xl font-black leading-tight md:text-6xl">Fresh groceries from nearby vendors.</h1>
               <p className="mt-4 max-w-lg text-white/85">Shop local produce, compare nearby vendors, choose pickup or delivery, and pay with M-PESA.</p>
               <div className="mt-6 flex flex-wrap gap-3">
-                <button className="rounded-2xl bg-white px-5 py-3 font-bold text-emerald-700">Shop now</button>
-                <button className="rounded-2xl bg-black/15 px-5 py-3 font-semibold backdrop-blur">Build a market list</button>
+                <button onClick={() => document.getElementById("products")?.scrollIntoView({ behavior: "smooth" })} className="rounded-2xl bg-white px-5 py-3 font-bold text-emerald-700">Shop now</button>
+                <button onClick={() => setMarketListOpen(true)} className="rounded-2xl bg-black/15 px-5 py-3 font-semibold backdrop-blur">Build a market list</button>
               </div>
             </div>
           </div>
@@ -104,7 +108,7 @@ export default function Marketplace() {
           </div>
         </section>
 
-        <section className="mt-8">
+        <section id="products" className="mt-8 scroll-mt-24">
           <div className="flex items-end justify-between">
             <div>
               <p className="text-sm text-slate-500 dark:text-slate-400">Fresh picks near you</p>
