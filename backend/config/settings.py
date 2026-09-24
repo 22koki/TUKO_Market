@@ -117,3 +117,14 @@ if DEBUG:
     ]
 
 MPESA_MOCK = os.getenv("MPESA_MOCK", "True").lower() == "true"
+MPESA_ENVIRONMENT = os.getenv("MPESA_ENVIRONMENT", "sandbox").lower()
+MPESA_BASE_URL = os.getenv(
+    "MPESA_BASE_URL",
+    "https://sandbox.safaricom.co.ke" if MPESA_ENVIRONMENT == "sandbox" else "https://api.safaricom.co.ke",
+)
+MPESA_CONSUMER_KEY = os.getenv("MPESA_CONSUMER_KEY", "")
+MPESA_CONSUMER_SECRET = os.getenv("MPESA_CONSUMER_SECRET", "")
+MPESA_SHORTCODE = os.getenv("MPESA_SHORTCODE", "")
+MPESA_PASSKEY = os.getenv("MPESA_PASSKEY", "")
+MPESA_CALLBACK_URL = os.getenv("MPESA_CALLBACK_URL", "")
+MPESA_TRANSACTION_TYPE = os.getenv("MPESA_TRANSACTION_TYPE", "CustomerPayBillOnline")
