@@ -1,10 +1,4 @@
 import Marketplace from "./pages/Marketplace";
 import { ThemeProvider } from "./context/ThemeContext";
-
-export default function App() {
-  return (
-    <ThemeProvider>
-      <Marketplace />
-    </ThemeProvider>
-  );
-}
+import { CartProvider } from "./context/CartContext";
+export default function App(){return <ThemeProvider><CartProvider><Marketplace/></CartProvider></ThemeProvider>}
