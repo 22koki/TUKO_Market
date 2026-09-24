@@ -16,7 +16,7 @@ export default function CartDrawer({ open, onClose }) {
    try{
      const customerSession = await ensureRole("customer");
      if(!customerSession){
-       logout();
+       logout("customer");
        if(!username || !password){
          setNeedsCustomerLogin(true);
          setMessage("You are not signed in as a customer. Please sign in with your customer account.");
@@ -25,7 +25,7 @@ export default function CartDrawer({ open, onClose }) {
        await login(username,password);
        const roleOkay = await ensureRole("customer");
        if(!roleOkay){
-         logout();
+         logout("customer");
          setNeedsCustomerLogin(true);
          setMessage("Only customer accounts can place orders. Please use your customer login.");
          return;
@@ -60,7 +60,7 @@ export default function CartDrawer({ open, onClose }) {
  {checkout&&!order&&<div className="mt-6 space-y-4">
    <div className="grid grid-cols-2 gap-3"><button onClick={()=>setFulfilment("delivery")} className={`rounded-2xl p-4 font-bold ${fulfilment==="delivery"?"bg-emerald-600 text-white":"bg-white dark:bg-slate-900"}`}>🛵 Delivery</button><button onClick={()=>setFulfilment("pickup")} className={`rounded-2xl p-4 font-bold ${fulfilment==="pickup"?"bg-emerald-600 text-white":"bg-white dark:bg-slate-900"}`}>🧺 Pickup</button></div>
    {fulfilment==="delivery"&&<input value={address} onChange={e=>setAddress(e.target.value)} placeholder="Delivery address e.g. Kilimani" className="w-full rounded-2xl border bg-white p-4 dark:border-slate-700 dark:bg-slate-900"/>}
-   {(!localStorage.getItem("tuko-access")||needsCustomerLogin)&&<div className="rounded-3xl bg-orange-50 p-4 dark:bg-orange-500/10"><div className="mb-3 font-black">Sign in to place your order</div><input value={username} onChange={e=>setUsername(e.target.value)} placeholder="Username" className="mb-2 w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-slate-900"/><input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" className="w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-slate-900"/></div>}
+   {(!localStorage.getItem("tuko-customer-access")||needsCustomerLogin)&&<div className="rounded-3xl bg-orange-50 p-4 dark:bg-orange-500/10"><div className="mb-3 font-black">Sign in to place your order</div><input value={username} onChange={e=>setUsername(e.target.value)} placeholder="Username" className="mb-2 w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-slate-900"/><input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" className="w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-slate-900"/></div>}
    <div className="rounded-3xl bg-white p-4 dark:bg-slate-900"><div className="flex justify-between"><span>Items</span><b>KSh {subtotal.toLocaleString()}</b></div><div className="mt-2 flex justify-between"><span>{fulfilment==="delivery"?"Delivery":"Pickup"}</span><b>KSh {delivery}</b></div><div className="mt-4 flex justify-between text-xl font-black"><span>Total</span><span>KSh {(subtotal+delivery).toLocaleString()}</span></div></div>
    <button disabled={busy} onClick={placeOrder} className="w-full rounded-2xl bg-emerald-600 py-4 font-black text-white disabled:opacity-50">{busy?"Placing order...":"Place order"}</button>
  </div>}
