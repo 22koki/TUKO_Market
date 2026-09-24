@@ -16,9 +16,16 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
+    delivery = serializers.SerializerMethodField()
     class Meta:
         model = Order
-        fields = ("id","fulfilment","status","delivery_address","customer_note","items_total","delivery_fee","total","created_at","items")
+        fields = ("id","fulfilment","status","delivery_address","customer_note","items_total","delivery_fee","total","created_at","items","delivery")
+
+    def get_delivery(self, obj):
+        if not hasattr(obj, "delivery_job"):
+            return None
+        from delivery.serializers import CustomerDeliveryJobSerializer
+        return CustomerDeliveryJobSerializer(obj.delivery_job).data
 
 class CreateOrderSerializer(serializers.Serializer):
     fulfilment = serializers.ChoiceField(choices=Order.Fulfilment.choices)

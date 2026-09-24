@@ -87,4 +87,14 @@ export async function updateDelivery(id, action, pin="") {
  const {data}=await api.post(`/api/deliveries/${id}/update/`,{action,pin},{headers:{Authorization:`Bearer ${token}`}});
  return data;
 }
+export async function fetchOrders() {
+ const token=localStorage.getItem("tuko-access");
+ const {data}=await api.get("/api/orders/",{headers:{Authorization:`Bearer ${token}`}});
+ return data;
+}
+export async function fetchOrder(id) {
+ const token=localStorage.getItem("tuko-access");
+ const {data}=await api.get(`/api/orders/${id}/`,{headers:{Authorization:`Bearer ${token}`}});
+ return data;
+}
 export default api;

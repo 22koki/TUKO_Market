@@ -47,4 +47,13 @@ class VendorOrderStatusView(generics.UpdateAPIView):
             return Response({"detail": f"Cannot change {order.status} to {requested}."}, status=status.HTTP_400_BAD_REQUEST)
         order.status = requested
         order.save(update_fields=["status"])
+        if requested == Order.Status.READY and order.fulfilment == Order.Fulfilment.DELIVERY:
+            from delivery.models import DeliveryJob
+            DeliveryJob.objects.get_or_create(order=order)
         return __import__("rest_framework.response", fromlist=["Response"]).Response(OrderSerializer(order).data)
+
+
+class CustomerOrderDetailView(generics.RetrieveAPIView):
+    serializer_class = OrderSerializer
+    def get_queryset(self):
+        return Order.objects.filter(customer=self.request.user).prefetch_related("items__vendor").select_related("delivery_job__rider")
