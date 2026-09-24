@@ -100,3 +100,16 @@ CORS_ALLOWED_ORIGINS = [
     ).split(",")
     if origin.strip()
 ]
+
+
+# During local development React may run on a private-network address (for example
+# http://172.24.128.1:3000). Keep these regexes DEBUG-only so production origins
+# remain explicitly controlled by CORS_ALLOWED_ORIGINS.
+if DEBUG:
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r"^http://localhost:(3000|5173)$",
+        r"^http://127\.0\.0\.1:(3000|5173)$",
+        r"^http://10\.\d{1,3}\.\d{1,3}\.\d{1,3}:(3000|5173)$",
+        r"^http://192\.168\.\d{1,3}\.\d{1,3}:(3000|5173)$",
+        r"^http://172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}:(3000|5173)$",
+    ]
