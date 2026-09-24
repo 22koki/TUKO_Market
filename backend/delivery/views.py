@@ -13,13 +13,13 @@ class RiderOnly:
             raise PermissionDenied("Rider account required.")
 
 class AvailableDeliveryListView(RiderOnly, generics.ListAPIView):
-    serializer_class = DeliveryJobSerializer
+    serializer_class = RiderDeliveryJobSerializer
     def get_queryset(self):
         self.ensure_rider(self.request)
         return DeliveryJob.objects.filter(status=DeliveryJob.Status.AVAILABLE, rider__isnull=True).select_related("order").order_by("created_at")
 
 class MyDeliveryListView(RiderOnly, generics.ListAPIView):
-    serializer_class = DeliveryJobSerializer
+    serializer_class = RiderDeliveryJobSerializer
     def get_queryset(self):
         self.ensure_rider(self.request)
         return DeliveryJob.objects.filter(rider=self.request.user).select_related("order").order_by("-created_at")
