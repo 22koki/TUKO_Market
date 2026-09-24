@@ -4,6 +4,7 @@ from rest_framework.test import APITestCase
 from vendors.models import VendorStore
 from catalog.models import Category, Product
 from .models import Order
+from delivery.models import DeliveryJob
 
 User = get_user_model()
 
@@ -66,3 +67,18 @@ class OrderTests(APITestCase):
         self.client.force_authenticate(self.product.vendor.owner)
         response = self.client.patch(reverse("vendor-order-status", args=[create.data["id"]]), {"status": "ready"}, format="json")
         self.assertEqual(response.status_code, 400)
+
+    def test_delivery_job_is_created_when_delivery_order_reaches_ready(self):
+        create = self.client.post(reverse("order-list-create"), {
+            "fulfilment": "delivery",
+            "delivery_address": "Ngong, Nairobi",
+            "items": [{"product": self.product.id, "quantity": "1.00"}],
+        }, format="json")
+        self.client.force_authenticate(self.product.vendor.owner)
+        url = reverse("vendor-order-status", args=[create.data["id"]])
+        for new_status in ("confirmed", "preparing", "ready"):
+            response = self.client.patch(url, {"status": new_status}, format="json")
+            self.assertEqual(response.status_code, 200)
+        job = DeliveryJob.objects.get(order_id=create.data["id"])
+        self.assertEqual(job.status, DeliveryJob.Status.AVAILABLE)
+        self.assertIsNone(job.rider)
