@@ -87,6 +87,16 @@ export async function updateDelivery(id, action, pin="") {
  const {data}=await api.post(`/api/deliveries/${id}/update/`,{action,pin},{headers:{Authorization:`Bearer ${token}`}});
  return data;
 }
+export async function ensureRole(role) {
+  const token = localStorage.getItem("tuko-access");
+  if (!token) return false;
+  try {
+    const me = await fetchMe();
+    return me.role === role;
+  } catch {
+    logout();
+    return false;
+  }
 export async function fetchOrders() {
  const token=localStorage.getItem("tuko-access");
  const {data}=await api.get("/api/orders/",{headers:{Authorization:`Bearer ${token}`}});
