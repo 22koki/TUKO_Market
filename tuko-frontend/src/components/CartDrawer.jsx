@@ -15,7 +15,11 @@ export default function CartDrawer({ open, onClose }) {
      if(!localStorage.getItem("tuko-access")) await login(username,password);
      const order=await createOrder({fulfilment,delivery_address:fulfilment==="delivery"?address:"",items:items.map(i=>({product:i.id,quantity:i.quantity}))});
      clearCart(); setCheckout(false); setMessage(`Order #${order.id} placed successfully — KSh ${Number(order.total).toLocaleString()}`);
-   }catch(e){setMessage(e.response?.data?.detail||"Could not place order. Check your login and checkout details.");}
+   }catch(e){
+     const data=e.response?.data;
+     const details=data?.detail || data?.items?.[0] || data?.delivery_address?.[0] || (data && JSON.stringify(data));
+     setMessage(details || "Could not place order. Check your login and checkout details.");
+   }
    finally{setBusy(false);}
  }
  return <><button aria-label="Close cart" onClick={onClose} className={open?"fixed inset-0 z-40 bg-black/40 backdrop-blur-sm":"hidden"}/>
