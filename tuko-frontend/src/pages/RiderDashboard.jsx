@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FiArrowLeft, FiMapPin, FiNavigation, FiPackage, FiDollarSign } from "react-icons/fi";
-import { acceptDelivery, fetchAvailableDeliveries, fetchMe, fetchMyDeliveries, login, updateDelivery } from "../services/api";
+import { acceptDelivery, fetchAvailableDeliveries, fetchMe, fetchMyDeliveries, loginAs, updateDelivery } from "../services/api";
 
 export default function RiderDashboard(){
  const [available,setAvailable]=useState([]),[mine,setMine]=useState([]),[ready,setReady]=useState(false),[message,setMessage]=useState("");
  const [username,setUsername]=useState(""),[password,setPassword]=useState(""),[pin,setPin]=useState({});
  async function load(){
-  try{const me=await fetchMe(); if(me.role!=="rider"){setReady(false);setMessage("This account is not a rider account.");return;} setReady(true); const [a,m]=await Promise.all([fetchAvailableDeliveries(),fetchMyDeliveries()]);setAvailable(a);setMine(m);}
+  try{const me=await fetchMe("rider"); if(me.role!=="rider"){setReady(false);setMessage("This account is not a rider account.");return;} setReady(true); const [a,m]=await Promise.all([fetchAvailableDeliveries(),fetchMyDeliveries()]);setAvailable(a);setMine(m);}
   catch(e){setReady(false);setMessage(e.response?.data?.detail||"Sign in with a rider account.");}
  }
- useEffect(()=>{if(localStorage.getItem("tuko-access"))load();},[]);
- async function signIn(e){e.preventDefault();try{await login(username,password);await load();}catch(e){setMessage(e.response?.data?.detail||"Rider login failed.");}}
+ useEffect(()=>{if(localStorage.getItem("tuko-rider-access"))load();},[]);
+ async function signIn(e){e.preventDefault();try{await loginAs("rider",username,password);await load();}catch(e){setMessage(e.response?.data?.detail||"Rider login failed.");}}
  async function accept(id){try{await acceptDelivery(id);await load();}catch(e){setMessage(e.response?.data?.detail||"Could not accept delivery.");}}
  async function action(job,act){try{await updateDelivery(job.id,act,pin[job.id]||"");await load();}catch(e){setMessage(e.response?.data?.detail||"Could not update delivery.");}}
  const earnings=useMemo(()=>mine.filter(j=>j.status==="delivered").reduce((n,j)=>n+Number(j.earnings),0),[mine]);
