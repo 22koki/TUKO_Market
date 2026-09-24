@@ -52,4 +52,19 @@ export async function getPayment(orderId) {
   return data;
 }
 
+export async function fetchMe() {
+  const token = localStorage.getItem("tuko-access");
+  const { data } = await api.get("/api/auth/me/", { headers: { Authorization: `Bearer ${token}` } });
+  return data;
+}
+export async function fetchVendorOrders() {
+  const token = localStorage.getItem("tuko-access");
+  const { data } = await api.get("/api/orders/vendor/", { headers: { Authorization: `Bearer ${token}` } });
+  return data;
+}
+export async function updateVendorOrderStatus(orderId, status) {
+  const token = localStorage.getItem("tuko-access");
+  const { data } = await api.patch(`/api/orders/vendor/${orderId}/status/`, { status }, { headers: { Authorization: `Bearer ${token}` } });
+  return data;
+}
 export default api;
