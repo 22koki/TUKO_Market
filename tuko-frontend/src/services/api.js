@@ -67,4 +67,24 @@ export async function updateVendorOrderStatus(orderId, status) {
   const { data } = await api.patch(`/api/orders/vendor/${orderId}/status/`, { status }, { headers: { Authorization: `Bearer ${token}` } });
   return data;
 }
+export async function fetchAvailableDeliveries() {
+ const token=localStorage.getItem("tuko-access");
+ const {data}=await api.get("/api/deliveries/available/",{headers:{Authorization:`Bearer ${token}`}});
+ return data;
+}
+export async function fetchMyDeliveries() {
+ const token=localStorage.getItem("tuko-access");
+ const {data}=await api.get("/api/deliveries/mine/",{headers:{Authorization:`Bearer ${token}`}});
+ return data;
+}
+export async function acceptDelivery(id) {
+ const token=localStorage.getItem("tuko-access");
+ const {data}=await api.post(`/api/deliveries/${id}/accept/`,{}, {headers:{Authorization:`Bearer ${token}`}});
+ return data;
+}
+export async function updateDelivery(id, action, pin="") {
+ const token=localStorage.getItem("tuko-access");
+ const {data}=await api.post(`/api/deliveries/${id}/update/`,{action,pin},{headers:{Authorization:`Bearer ${token}`}});
+ return data;
+}
 export default api;
