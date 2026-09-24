@@ -20,4 +20,19 @@ export async function fetchVendors() {
   return data;
 }
 
+export async function login(username, password) {
+  const { data } = await api.post("/api/auth/token/", { username, password });
+  localStorage.setItem("tuko-access", data.access);
+  localStorage.setItem("tuko-refresh", data.refresh);
+  return data;
+}
+export function logout() {
+  localStorage.removeItem("tuko-access");
+  localStorage.removeItem("tuko-refresh");
+}
+export async function createOrder(payload) {
+  const token = localStorage.getItem("tuko-access");
+  const { data } = await api.post("/api/orders/", payload, { headers: { Authorization: `Bearer ${token}` } });
+  return data;
+}
 export default api;

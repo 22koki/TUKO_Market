@@ -34,3 +34,14 @@ class OrderTests(APITestCase):
             "items": [{"product": self.product.id, "quantity": "1.00"}],
         }, format="json")
         self.assertEqual(response.status_code, 400)
+
+    def test_vendor_can_see_orders_containing_their_items(self):
+        self.client.post(reverse("order-list-create"), {
+            "fulfilment": "pickup",
+            "items": [{"product": self.product.id, "quantity": "1.00"}],
+        }, format="json")
+        vendor_user = self.product.vendor.owner
+        self.client.force_authenticate(vendor_user)
+        response = self.client.get(reverse("vendor-order-list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
