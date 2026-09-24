@@ -35,4 +35,21 @@ export async function createOrder(payload) {
   const { data } = await api.post("/api/orders/", payload, { headers: { Authorization: `Bearer ${token}` } });
   return data;
 }
+export async function initiateMpesa(orderId, phoneNumber) {
+  const token = localStorage.getItem("tuko-access");
+  const { data } = await api.post("/api/payments/mpesa/initiate/", {
+    order_id: orderId,
+    phone_number: phoneNumber,
+  }, { headers: { Authorization: `Bearer ${token}` } });
+  return data;
+}
+
+export async function getPayment(orderId) {
+  const token = localStorage.getItem("tuko-access");
+  const { data } = await api.get(`/api/payments/orders/${orderId}/`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return data;
+}
+
 export default api;
