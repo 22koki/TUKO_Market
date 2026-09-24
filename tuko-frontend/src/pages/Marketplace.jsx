@@ -24,6 +24,7 @@ export default function Marketplace() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [vendors, setVendors] = useState([]);
+  const [catalogOnline, setCatalogOnline] = useState(true);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
@@ -37,6 +38,7 @@ export default function Marketplace() {
         setVendors(Array.isArray(v) ? v : []);
       })
       .catch(() => {
+        setCatalogOnline(false);
         setProducts(fallbackProducts);
         setCategories(fallbackCategories);
         setVendors([]);
@@ -131,7 +133,7 @@ export default function Marketplace() {
                       <div className="text-xl font-black text-emerald-700 dark:text-emerald-400">KSh {Number(product.price).toLocaleString()}</div>
                       <div className="text-xs text-slate-500">per {product.unit}</div>
                     </div>
-                    <button onClick={() => { addItem(product); setCartOpen(true); }} className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/20 transition hover:scale-105"><FiPlus /></button>
+                    <button disabled={!catalogOnline} title={!catalogOnline ? "Backend catalog unavailable" : "Add to cart"} onClick={() => { if (catalogOnline) { addItem(product); setCartOpen(true); } }} className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/20 transition hover:scale-105 disabled:cursor-not-allowed disabled:bg-slate-400"><FiPlus /></button>
                   </div>
                 </div>
               </article>
