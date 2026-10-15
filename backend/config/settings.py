@@ -116,7 +116,8 @@ if DEBUG:
         r"^http://172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}:(3000|5173)$",
     ]
 
-MPESA_MOCK = os.getenv("MPESA_MOCK", "True").lower() == "true"
+MPESA_MOCK = os.getenv("MPESA_MOCK", "True" if DEBUG else "False").lower() == "true"
+MPESA_CALLBACK_TOKEN = os.getenv("MPESA_CALLBACK_TOKEN", "")
 MPESA_ENVIRONMENT = os.getenv("MPESA_ENVIRONMENT", "sandbox").lower()
 MPESA_BASE_URL = os.getenv(
     "MPESA_BASE_URL",
