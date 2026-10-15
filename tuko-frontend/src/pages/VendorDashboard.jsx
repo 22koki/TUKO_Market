@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import VendorCatalog from "../components/VendorCatalog";
 import { FiArrowLeft, FiPackage, FiDollarSign, FiClock, FiCheckCircle } from "react-icons/fi";
 import { fetchMe, fetchVendorOrders, loginAs, updateVendorOrderStatus } from "../services/api";
 

@@ -1,5 +1,6 @@
+from collections import defaultdict
 from decimal import Decimal
-from django.db import transaction
+from django.db import transaction, models
 from rest_framework import serializers
 from catalog.models import Product
 from .models import Order, OrderItem
@@ -38,23 +39,36 @@ class CreateOrderSerializer(serializers.Serializer):
             raise serializers.ValidationError({"items": "Your basket is empty."})
         if attrs["fulfilment"] == Order.Fulfilment.DELIVERY and not attrs.get("delivery_address"):
             raise serializers.ValidationError({"delivery_address": "Delivery address is required."})
+        quantities = defaultdict(lambda: Decimal("0"))
         for row in attrs["items"]:
-            if row["quantity"] > row["product"].stock_quantity:
-                raise serializers.ValidationError({"items": f"Not enough stock for {row['product'].name}."})
+            quantities[row["product"].pk] += row["quantity"]
+            product = row["product"]
+            if not product.vendor.is_verified or not product.vendor.is_open:
+                raise serializers.ValidationError({"items": f"{product.name} is not available from an open verified vendor."})
+            if quantities[product.pk] > product.stock_quantity:
+                raise serializers.ValidationError({"items": f"Not enough stock for {product.name}."})
         return attrs
 
     @transaction.atomic
     def create(self, validated_data):
         items = validated_data.pop("items")
         customer = self.context["request"].user
-        items_total = sum((row["product"].price * row["quantity"] for row in items), Decimal("0.00"))
+        quantities = defaultdict(lambda: Decimal("0"))
+        for row in items:
+            quantities[row["product"].pk] += row["quantity"]
+        products = list(Product.objects.select_for_update().select_related("vendor").filter(pk__in=sorted(quantities)).order_by("pk"))
+        if len(products) != len(quantities):
+            raise serializers.ValidationError({"items": "A product is unavailable."})
+        for product in products:
+            if not product.is_active or not product.vendor.is_verified or not product.vendor.is_open or quantities[product.pk] > product.stock_quantity:
+                raise serializers.ValidationError({"items": f"{product.name} is unavailable or has insufficient stock."})
+        items_total = sum((p.price * quantities[p.pk] for p in products), Decimal("0.00"))
         delivery_fee = Decimal("150.00") if validated_data["fulfilment"] == Order.Fulfilment.DELIVERY else Decimal("0.00")
         order = Order.objects.create(customer=customer, items_total=items_total, delivery_fee=delivery_fee, total=items_total + delivery_fee, **validated_data)
-        for row in items:
-            product = Product.objects.select_for_update().get(pk=row["product"].pk)
-            if row["quantity"] > product.stock_quantity:
+        for product in products:
+            quantity = quantities[product.pk]
+            updated = Product.objects.filter(pk=product.pk, stock_quantity__gte=quantity).update(stock_quantity=models.F("stock_quantity") - quantity)
+            if not updated:
                 raise serializers.ValidationError({"items": f"Not enough stock for {product.name}."})
-            OrderItem.objects.create(order=order, vendor=product.vendor, product=product, product_name=product.name, unit=product.unit, unit_price=product.price, quantity=row["quantity"], line_total=product.price * row["quantity"])
-            product.stock_quantity -= row["quantity"]
-            product.save(update_fields=["stock_quantity"])
+            OrderItem.objects.create(order=order, vendor=product.vendor, product=product, product_name=product.name, unit=product.unit, unit_price=product.price, quantity=quantity, line_total=product.price * quantity)
         return order

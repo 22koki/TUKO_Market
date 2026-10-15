@@ -39,6 +39,11 @@ export async function loginAs(role, username, password) {
   return data;
 }
 
+export async function registerCustomer(payload) {
+  const { data } = await api.post("/api/auth/register/", { ...payload, role: "customer" });
+  return data;
+}
+
 export async function login(username, password) {
   return loginAs("customer", username, password);
 }
@@ -91,6 +96,26 @@ export async function fetchOrders() {
 
 export async function fetchOrder(id) {
   const { data } = await api.get(`/api/orders/${id}/`, { headers: authHeaders("customer") });
+  return data;
+}
+
+export async function fetchVendorInventory() {
+  const { data } = await api.get("/api/marketplace/vendor/products/", { headers: authHeaders("vendor") });
+  return data;
+}
+
+export async function fetchMyVendorStore() {
+  const { data } = await api.get("/api/vendors/mine/", { headers: authHeaders("vendor") });
+  return data;
+}
+
+export async function createVendorProduct(payload) {
+  const { data } = await api.post("/api/marketplace/vendor/products/", payload, { headers: authHeaders("vendor") });
+  return data;
+}
+
+export async function updateVendorProduct(id, payload) {
+  const { data } = await api.patch(`/api/marketplace/vendor/products/${id}/`, payload, { headers: authHeaders("vendor") });
   return data;
 }
 
