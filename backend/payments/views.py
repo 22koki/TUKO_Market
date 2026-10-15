@@ -1,3 +1,7 @@
+import hmac
+from decimal import Decimal, InvalidOperation
+
+from django.conf import settings
 from django.db import transaction
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -67,7 +71,15 @@ class MpesaCallbackView(APIView):
     authentication_classes = []
 
     @transaction.atomic
-    def post(self, request):
+    def post(self, request, callback_token=None):
+        # Safaricom STK callbacks do not carry a cryptographic signature.
+        # Use an unguessable callback URL token and verify the payment metadata.
+        if not settings.MPESA_MOCK and (
+            not settings.MPESA_CALLBACK_TOKEN or
+            not callback_token or
+            not hmac.compare_digest(callback_token, settings.MPESA_CALLBACK_TOKEN)
+        ):
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         data = parse_stk_callback(request.data)
         payment = Payment.objects.select_for_update().filter(
             checkout_request_id=data["checkout_request_id"]
@@ -85,6 +97,15 @@ class MpesaCallbackView(APIView):
         payment.mpesa_receipt_number = data["mpesa_receipt_number"]
 
         if data["result_code"] == "0":
+            if not settings.MPESA_MOCK:
+                try:
+                    amount = Decimal(str(data["amount"]))
+                    normalized_phone = normalize_ke_phone(data["phone_number"])
+                except (ValueError, InvalidOperation, TypeError):
+                    return Response({"detail": "Invalid payment metadata."}, status=status.HTTP_400_BAD_REQUEST)
+                if (not data["mpesa_receipt_number"] or amount != payment.amount
+                        or normalized_phone != payment.phone_number):
+                    return Response({"detail": "Payment metadata mismatch."}, status=status.HTTP_400_BAD_REQUEST)
             payment.status = Payment.Status.PAID
         elif data["result_code"] == "1032":
             payment.status = Payment.Status.CANCELLED
