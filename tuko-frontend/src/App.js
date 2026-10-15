@@ -3,6 +3,7 @@ import Marketplace from "./pages/Marketplace";
 import VendorDashboard from "./pages/VendorDashboard";
 import RiderDashboard from "./pages/RiderDashboard";
 import MyOrders from "./pages/MyOrders";
+import Signup from "./pages/Signup";
 import { ThemeProvider } from "./context/ThemeContext";
 import { CartProvider } from "./context/CartContext";
 
@@ -16,6 +17,7 @@ export default function App(){
             <Route path="/vendor" element={<VendorDashboard/>}/>
             <Route path="/rider" element={<RiderDashboard/>}/>
             <Route path="/orders" element={<MyOrders/>}/>
+            <Route path="/signup" element={<Signup/>}/>
           </Routes>
         </BrowserRouter>
       </CartProvider>
