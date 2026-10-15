@@ -99,6 +99,26 @@ export async function fetchOrder(id) {
   return data;
 }
 
+export async function fetchVendorInventory() {
+  const { data } = await api.get("/api/marketplace/vendor/products/", { headers: authHeaders("vendor") });
+  return data;
+}
+
+export async function fetchMyVendorStore() {
+  const { data } = await api.get("/api/vendors/mine/", { headers: authHeaders("vendor") });
+  return data;
+}
+
+export async function createVendorProduct(payload) {
+  const { data } = await api.post("/api/marketplace/vendor/products/", payload, { headers: authHeaders("vendor") });
+  return data;
+}
+
+export async function updateVendorProduct(id, payload) {
+  const { data } = await api.patch(`/api/marketplace/vendor/products/${id}/`, payload, { headers: authHeaders("vendor") });
+  return data;
+}
+
 export async function fetchVendorOrders() {
   const { data } = await api.get("/api/orders/vendor/", { headers: authHeaders("vendor") });
   return data;
