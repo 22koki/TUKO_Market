@@ -5,6 +5,7 @@ jest.mock("./pages/Marketplace", () => () => <div>TUKO Marketplace</div>);
 jest.mock("./pages/VendorDashboard", () => () => <div>Vendor workspace</div>);
 jest.mock("./pages/RiderDashboard", () => () => <div>Rider workspace</div>);
 jest.mock("./pages/MyOrders", () => () => <div>My orders</div>);
+jest.mock("./pages/Signup", () => () => <div>Create account</div>);
 
 test("renders the TUKO marketplace at the home route", () => {
   window.history.pushState({}, "", "/");
