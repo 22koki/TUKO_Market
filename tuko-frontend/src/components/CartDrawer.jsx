@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FiMinus, FiPlus, FiTrash2, FiX } from "react-icons/fi";
 import { useCart } from "../context/CartContext";
-import { createOrder, ensureRole, initiateMpesa, login, logout } from "../services/api";
+import { createOrder, ensureRole, initiateMpesa, getPayment, login, logout } from "../services/api";
 
 export default function CartDrawer({ open, onClose }) {
  const {items,updateQuantity,removeItem,clearCart,subtotal}=useCart();
@@ -10,6 +10,18 @@ export default function CartDrawer({ open, onClose }) {
  const [message,setMessage]=useState(""), [busy,setBusy]=useState(false), [needsCustomerLogin,setNeedsCustomerLogin]=useState(false);
  const [order,setOrder]=useState(null), [paymentPhone,setPaymentPhone]=useState(""), [payment,setPayment]=useState(null);
  const delivery=items.length&&fulfilment==="delivery"?150:0;
+ useEffect(() => {
+   if (!order || !payment || payment.status !== "pending" || !open) return undefined;
+   const id = setInterval(async () => {
+     try {
+       const latest = await getPayment(order.id);
+       setPayment(latest);
+       if (latest.status === "paid") setMessage("Payment confirmed. Your order is now awaiting fulfilment.");
+       if (latest.status === "failed" || latest.status === "cancelled") setMessage("Payment was not completed. You can retry.");
+     } catch { /* A transient tracking failure should not lose the order. */ }
+   }, 5000);
+   return () => clearInterval(id);
+ }, [order, payment, open]);
 
  async function placeOrder(){
    setBusy(true); setMessage("");
@@ -45,7 +57,7 @@ export default function CartDrawer({ open, onClose }) {
    try{
      const result=await initiateMpesa(order.id,paymentPhone);
      setPayment(result);
-     setMessage("M-PESA request created. In mock mode this simulates the STK step.");
+     setMessage("M-PESA request created. Check your phone for the STK prompt. Payment will update automatically after confirmation.");
    }catch(e){
      const data=e.response?.data;
      setMessage(data?.detail || (data && JSON.stringify(data)) || "Could not start M-PESA payment.");
@@ -69,7 +81,7 @@ export default function CartDrawer({ open, onClose }) {
    <div className="rounded-3xl bg-emerald-50 p-4 dark:bg-emerald-500/10"><div className="font-black">M-PESA number</div><p className="mt-1 text-xs text-slate-500">Use the number that should receive the STK prompt.</p><input value={paymentPhone} onChange={e=>setPaymentPhone(e.target.value)} placeholder="07XXXXXXXX" className="mt-3 w-full rounded-2xl border bg-white p-4 dark:border-slate-700 dark:bg-slate-900"/></div>
    <button disabled={busy||!paymentPhone} onClick={payMpesa} className="w-full rounded-2xl bg-emerald-600 py-4 font-black text-white disabled:opacity-50">{busy?"Starting M-PESA...":"Pay with M-PESA"}</button>
    {payment&&<div className="rounded-3xl bg-white p-4 dark:bg-slate-900"><div className="flex items-center justify-between"><span className="font-bold">Payment status</span><span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black uppercase text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">{payment.status}</span></div><p className="mt-3 break-all text-xs text-slate-500">{payment.result_description}</p></div>}
-   <p className="text-center text-xs text-slate-500">Local development uses mock STK. Real Safaricom Daraja comes next.</p>
+   <p className="text-center text-xs text-slate-500">Payment is only confirmed after a validated M-PESA callback.</p>
  </div>}
  {!!items.length&&!checkout&&!order&&<div className="fixed bottom-0 right-0 w-full max-w-md border-t bg-white p-5 dark:border-white/10 dark:bg-slate-900"><div className="flex justify-between text-xl font-black"><span>Subtotal</span><span>KSh {subtotal.toLocaleString()}</span></div><button onClick={()=>setCheckout(true)} className="mt-4 w-full rounded-2xl bg-emerald-600 py-4 font-black text-white">Continue to checkout</button></div>}
  </aside></>;
