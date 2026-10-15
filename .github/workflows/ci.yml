@@ -1,0 +1,45 @@
+name: TUKO checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: python -m pip install -r requirements.txt
+      - run: python manage.py check
+        env:
+          DJANGO_SECRET_KEY: ci-only-insecure-not-for-production
+      - run: python manage.py test
+        env:
+          DJANGO_SECRET_KEY: ci-only-insecure-not-for-production
+      - run: python manage.py makemigrations --check --dry-run
+        env:
+          DJANGO_SECRET_KEY: ci-only-insecure-not-for-production
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tuko-frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: tuko-frontend/package-lock.json
+      - run: npm ci
+      - run: CI=true npm test -- --watch=false --runInBand
+      - run: CI=false npm run build
