@@ -1,8 +1,13 @@
-import { render, screen } from '@testing-library/react';
-import App from './App';
+import { render, screen } from "@testing-library/react";
+import App from "./App";
 
-test('renders learn react link', () => {
+jest.mock("./pages/Marketplace", () => () => <div>TUKO Marketplace</div>);
+jest.mock("./pages/VendorDashboard", () => () => <div>Vendor workspace</div>);
+jest.mock("./pages/RiderDashboard", () => () => <div>Rider workspace</div>);
+jest.mock("./pages/MyOrders", () => () => <div>My orders</div>);
+
+test("renders the TUKO marketplace at the home route", () => {
+  window.history.pushState({}, "", "/");
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  expect(screen.getByText("TUKO Marketplace")).toBeInTheDocument();
 });
