@@ -2,10 +2,10 @@ from rest_framework import generics, permissions
 from rest_framework.exceptions import PermissionDenied
 from .models import VendorStore
 from .permissions import IsVendor
-from .serializers import VendorStoreSerializer
+from .serializers import PublicVendorStoreSerializer, VendorStoreSerializer
 
 class PublicVendorListView(generics.ListAPIView):
-    serializer_class = VendorStoreSerializer
+    serializer_class = PublicVendorStoreSerializer
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
