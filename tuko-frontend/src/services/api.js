@@ -39,6 +39,11 @@ export async function loginAs(role, username, password) {
   return data;
 }
 
+export async function registerCustomer(payload) {
+  const { data } = await api.post("/api/auth/register/", { ...payload, role: "customer" });
+  return data;
+}
+
 export async function login(username, password) {
   return loginAs("customer", username, password);
 }
