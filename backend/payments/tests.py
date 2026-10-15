@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from orders.models import Order
@@ -26,3 +27,37 @@ class PaymentTests(APITestCase):
         payment.refresh_from_db()
         self.assertEqual(payment.status, Payment.Status.PAID)
         self.assertEqual(payment.mpesa_receipt_number, "TUKO123")
+
+    @override_settings(MPESA_MOCK=False, MPESA_CALLBACK_TOKEN="private-callback-token")
+    def test_live_callback_rejects_unsigned_public_endpoint(self):
+        payment = Payment.objects.create(
+            order=self.order, amount="100.00", phone_number="254712345678",
+            checkout_request_id="LIVE-CHECKOUT-123"
+        )
+        self.client.force_authenticate(user=None)
+        response = self.client.post(
+            reverse("mpesa-callback"),
+            {"checkout_request_id": "LIVE-CHECKOUT-123", "result_code": 0,
+             "amount": 100, "phone_number": "254712345678",
+             "mpesa_receipt_number": "FRAUDULENT-RECEIPT"}, format="json"
+        )
+        self.assertEqual(response.status_code, 404)
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, Payment.Status.PENDING)
+
+    @override_settings(MPESA_MOCK=False, MPESA_CALLBACK_TOKEN="private-callback-token")
+    def test_live_callback_rejects_amount_mismatch(self):
+        payment = Payment.objects.create(
+            order=self.order, amount="100.00", phone_number="254712345678",
+            checkout_request_id="LIVE-CHECKOUT-456"
+        )
+        self.client.force_authenticate(user=None)
+        response = self.client.post(
+            reverse("mpesa-callback-secure", args=["private-callback-token"]),
+            {"checkout_request_id": "LIVE-CHECKOUT-456", "result_code": 0,
+             "amount": 1, "phone_number": "254712345678",
+             "mpesa_receipt_number": "MISMATCH-RECEIPT"}, format="json"
+        )
+        self.assertEqual(response.status_code, 400)
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, Payment.Status.PENDING)
